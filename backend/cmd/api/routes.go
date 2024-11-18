@@ -17,6 +17,10 @@ func (app *application) routes() http.Handler {
 
 	mux.POST("/authenticate", app.authenticate)
 
+	mux.GET("/refresh", app.refreshToken)
+
+	mux.GET("/users/:id", app.OneUser)
+
 	handler := app.enableCORS(mux)
 	handler = app.Logger(handler)
 

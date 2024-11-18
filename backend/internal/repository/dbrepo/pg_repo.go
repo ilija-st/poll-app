@@ -143,3 +143,15 @@ func (m *PostgresDBRepo) GetUserByEmail(email string) (*ent.User, error) {
 
 	return u, nil
 }
+
+func (m *PostgresDBRepo) GetUserById(id int) (*ent.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	u, err := m.DB.User.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
