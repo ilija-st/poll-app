@@ -13,9 +13,11 @@ func (app *application) routes() http.Handler {
 
 	mux.GET("/polls", app.AllPolls)
 
-	mux.GET("/users", app.AllUsers)
+	mux.GET("/users", app.authRequired(app.AllUsers))
 
 	mux.POST("/authenticate", app.authenticate)
+
+	mux.GET("/logout", app.logout)
 
 	mux.GET("/refresh", app.refreshToken)
 

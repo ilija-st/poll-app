@@ -108,6 +108,11 @@ func (app *application) authenticate(w http.ResponseWriter, r *http.Request, _ h
 	app.writeJSON(w, http.StatusAccepted, tokens)
 }
 
+func (app *application) logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	http.SetCookie(w, app.auth.GetExpiredRefreshCookie())
+	w.WriteHeader(http.StatusAccepted)
+}
+
 func (app *application) refreshToken(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	for _, cookie := range r.Cookies() {
 		if cookie.Name == app.auth.CookieName {
