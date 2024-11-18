@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 func (app *application) enableCORS(next http.Handler) http.Handler {
@@ -30,4 +32,15 @@ func (app *application) Logger(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 		log.Printf("Done in %v (%s %s)", time.Since(start), r.Method, r.URL.Path)
 	})
+}
+
+func (app *application) authRequired(next httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		_, _, err := app.auth.GetTokenFromHeaderAndVerify(w, r)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		next(w, r, ps)
+	}
 }
