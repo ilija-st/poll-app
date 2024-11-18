@@ -10,5 +10,10 @@ func (app *application) routes() http.Handler {
 	mux := httprouter.New()
 
 	mux.GET("/", app.Home)
+
+	mux.GET("/polls", app.AllPolls)
+
+	mux.GET("/users", app.AllUsers)
+
 	return mux
 }
