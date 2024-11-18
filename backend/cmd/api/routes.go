@@ -15,5 +15,7 @@ func (app *application) routes() http.Handler {
 
 	mux.GET("/users", app.AllUsers)
 
+	mux.POST("/authenticate", app.authenticate)
+
 	return mux
 }

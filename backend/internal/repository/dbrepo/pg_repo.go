@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // This type holds our database connections
@@ -37,12 +39,16 @@ func (m *PostgresDBRepo) SeedData() error {
 	}
 
 	// seed admin user
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("error generating hashed password")
+	}
 	u, err := m.DB.User.
 		Create().
 		SetEmail("admin@example.com").
 		SetFirstName("Admin").
 		SetLastName("Example").
-		SetPassword("secret").
+		SetPassword(string(hashPassword)).
 		Save(ctx)
 	if err != nil {
 		return fmt.Errorf("failed creating user: %w", err)
@@ -124,4 +130,16 @@ func (m *PostgresDBRepo) AllUsers() ([]*ent.User, error) {
 	}
 
 	return users, nil
+}
+
+func (m *PostgresDBRepo) GetUserByEmail(email string) (*ent.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	u, err := m.DB.User.Query().Where(user.EmailEQ(email)).Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
 }

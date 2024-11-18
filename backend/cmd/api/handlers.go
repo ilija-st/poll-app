@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"log"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -38,4 +40,53 @@ func (app *application) AllUsers(w http.ResponseWriter, r *http.Request, _ httpr
 	}
 
 	_ = app.writeJSON(w, http.StatusOK, users)
+}
+
+func (app *application) authenticate(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	// read json payload
+	var requestPayload struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	err := app.readJSON(w, r, &requestPayload)
+	if err != nil {
+		app.errorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+
+	// validate user against dataabse
+	user, err := app.DB.GetUserByEmail(requestPayload.Email)
+	if err != nil {
+		app.errorJSON(w, errors.New("invalid credentials"), http.StatusBadRequest)
+		return
+	}
+
+	// check password
+	valid, err := PasswordMatches(requestPayload.Password, user.Password)
+	if err != nil || !valid {
+		app.errorJSON(w, errors.New("invalid credentials"), http.StatusBadRequest)
+		return
+	}
+
+	// create a jwt user
+	u := jwtUser{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+	}
+
+	// generate tokens
+	tokens, err := app.auth.GenerateTokenPair(&u)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	log.Println(tokens.Token)
+	refreshCookie := app.auth.GetRefreshCookie(tokens.RefreshToken)
+	// this will send a cookie to whatever response we send
+	http.SetCookie(w, refreshCookie)
+
+	app.writeJSON(w, http.StatusAccepted, tokens)
 }

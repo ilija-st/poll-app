@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type JSONResponse struct {
@@ -68,4 +70,19 @@ func (app *application) errorJSON(w http.ResponseWriter, err error, status ...in
 	payload.Message = err.Error()
 
 	return app.writeJSON(w, statusCode, payload)
+}
+
+func PasswordMatches(plainText string, userPassword string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword([]byte(userPassword), []byte(plainText))
+	if err != nil {
+		switch {
+		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
+			// invalid password
+			return false, nil
+		default:
+			return false, err
+		}
+	}
+
+	return true, nil
 }
