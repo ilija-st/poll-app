@@ -155,3 +155,37 @@ func (m *PostgresDBRepo) GetUserById(id int) (*ent.User, error) {
 
 	return u, nil
 }
+func (m *PostgresDBRepo) GetPollById(id int) (*ent.Poll, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	poll, err := m.DB.Poll.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	poll_opts, err := poll.QueryPollOptions().All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed querying poll option %q poll: %w", poll.Question, err)
+
+	}
+	for _, po := range poll_opts {
+		vs, err := po.QueryVotes().All(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed querying votes for %q poll option: %w", po.Title, err)
+		}
+
+		for _, v := range vs {
+			u, err := v.QueryUser().Only(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed querying user for %q vote: %w", v, err)
+			}
+			v.Edges.User = u
+		}
+
+		po.Edges.Votes = append(po.Edges.Votes, vs...)
+	}
+
+	poll.Edges.PollOptions = append(poll.Edges.PollOptions, poll_opts...)
+
+	return poll, nil
+}

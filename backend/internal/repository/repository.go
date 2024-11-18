@@ -10,5 +10,6 @@ type DatabaseRepo interface {
 	AllUsers() ([]*ent.User, error)
 	GetUserByEmail(email string) (*ent.User, error)
 	GetUserById(id int) (*ent.User, error)
+	GetPollById(id int) (*ent.Poll, error)
 	SeedData() error
 }

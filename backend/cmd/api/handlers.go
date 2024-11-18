@@ -59,6 +59,21 @@ func (app *application) OneUser(w http.ResponseWriter, r *http.Request, ps httpr
 	_ = app.writeJSON(w, http.StatusOK, user)
 }
 
+func (app *application) OnePoll(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	pid, err := strconv.Atoi(ps.ByName("id"))
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+	poll, err := app.DB.GetPollById(pid)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	_ = app.writeJSON(w, http.StatusOK, poll)
+}
+
 func (app *application) authenticate(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// read json payload
 	var requestPayload struct {
