@@ -17,5 +17,7 @@ func (app *application) routes() http.Handler {
 
 	mux.POST("/authenticate", app.authenticate)
 
-	return mux
+	handler := app.enableCORS(mux)
+
+	return handler
 }

@@ -1,8 +1,10 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+)
 
-func (app *application) enableCORS(h http.Handler) http.Handler {
+func (app *application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "http://*")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -10,9 +12,10 @@ func (app *application) enableCORS(h http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, X-CSRF-Token, Authorization")
 
 		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
 			return
-		} else {
-			h.ServeHTTP(w, r)
 		}
+
+		next.ServeHTTP(w, r)
 	})
 }
