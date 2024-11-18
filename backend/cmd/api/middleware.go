@@ -1,7 +1,9 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"time"
 )
 
 func (app *application) enableCORS(next http.Handler) http.Handler {
@@ -17,5 +19,15 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+// A Logger function which simply wraps the handler function around some log messages
+func (app *application) Logger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		log.Printf("%s %s", r.Method, r.URL.Path)
+		next.ServeHTTP(w, r)
+		log.Printf("Done in %v (%s %s)", time.Since(start), r.Method, r.URL.Path)
 	})
 }
