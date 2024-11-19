@@ -22,6 +22,23 @@ func (m *PostgresDBRepo) Connection() *ent.Client {
 	return m.DB
 }
 
+func (m *PostgresDBRepo) ExistsUserWithEmail(email string) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	cnt, err := m.DB.User.
+		Query().
+		Where(user.Email(email)).
+		Count(ctx)
+	if err != nil {
+		return false, err
+	}
+	if cnt > 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
 func (m *PostgresDBRepo) SeedData() error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
@@ -132,6 +149,28 @@ func (m *PostgresDBRepo) AllUsers() ([]*ent.User, error) {
 	return users, nil
 }
 
+func (m *PostgresDBRepo) CreateUser(firstName string, lastName string, email string, password string) (*ent.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	u, err := m.DB.User.
+		Create().
+		SetEmail(email).
+		SetFirstName(firstName).
+		SetLastName(lastName).
+		SetPassword(string(hashPassword)).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
 func (m *PostgresDBRepo) GetUserByEmail(email string) (*ent.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
@@ -188,4 +227,44 @@ func (m *PostgresDBRepo) GetPollById(id int) (*ent.Poll, error) {
 	poll.Edges.PollOptions = append(poll.Edges.PollOptions, poll_opts...)
 
 	return poll, nil
+}
+
+func (m *PostgresDBRepo) GetPollOptionById(id int) (*ent.PollOption, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	po, err := m.DB.PollOption.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Extract into function
+	vs, err := po.QueryVotes().All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed querying votes for %q poll option: %w", po.Title, err)
+	}
+
+	for _, v := range vs {
+		u, err := v.QueryUser().Only(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed querying user for %q vote: %w", v, err)
+		}
+		v.Edges.User = u
+	}
+
+	po.Edges.Votes = append(po.Edges.Votes, vs...)
+
+	return po, nil
+}
+
+func (m *PostgresDBRepo) VoteOnPollOption(uid int, poid int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	err := m.DB.Vote.Create().SetPollOptionID(poid).SetUserID(uid).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
