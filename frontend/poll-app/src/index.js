@@ -5,7 +5,7 @@ import SignIn from "./components/sign-in/SignIn";
 import SignUp from "./components/sign-up/SignUp";
 import ErrorPage from "./components/error-page/ErrorPage";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Poll from "./components/poll/Poll";
+import Polls from "./components/poll/Polls";
 import Home from "./components/Home/Home";
 
 const router = createBrowserRouter([
@@ -25,7 +25,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/polls",
-        element: <Poll />,
+        element: <Polls />,
       },
     ],
   },
