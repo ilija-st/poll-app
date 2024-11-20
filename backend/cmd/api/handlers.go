@@ -1,6 +1,7 @@
 package main
 
 import (
+	"backend/ent"
 	"backend/ent/predicate"
 	"backend/ent/user"
 	"context"
@@ -71,6 +72,30 @@ func (app *application) OnePoll(w http.ResponseWriter, r *http.Request, ps httpr
 	poll, err := app.DB.GetPollById(pid)
 	if err != nil {
 		app.errorJSON(w, err)
+		return
+	}
+
+	_ = app.writeJSON(w, http.StatusOK, poll)
+}
+
+func (app *application) CreatePoll(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	var requestPayload struct {
+		Question string   `json:"question"`
+		Options  []string `json:"options"`
+		UserId   int      `json:"user_id"`
+	}
+
+	err := app.readJSON(w, r, &requestPayload)
+	if err != nil {
+		app.errorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+
+	log.Println(requestPayload)
+
+	poll, err := app.DB.CreatePoll(requestPayload.Question, requestPayload.Options, requestPayload.UserId)
+	if err != nil {
+		app.errorJSON(w, errors.New("error when creating a poll"), http.StatusBadRequest)
 		return
 	}
 
@@ -181,12 +206,24 @@ func (app *application) authenticate(w http.ResponseWriter, r *http.Request, _ h
 		return
 	}
 
+	type Response struct {
+		Token        string    `json:"access_token"`
+		RefreshToken string    `json:"refresh_token"`
+		User         *ent.User `json:"user"`
+	}
+
+	res := Response{
+		Token:        tokens.Token,
+		RefreshToken: tokens.RefreshToken,
+		User:         user,
+	}
+
 	log.Println(tokens.Token)
 	refreshCookie := app.auth.GetRefreshCookie(tokens.RefreshToken)
 	// this will send a cookie to whatever response we send
 	http.SetCookie(w, refreshCookie)
 
-	app.writeJSON(w, http.StatusAccepted, tokens)
+	app.writeJSON(w, http.StatusAccepted, res)
 }
 
 func (app *application) register(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -238,11 +275,23 @@ func (app *application) register(w http.ResponseWriter, r *http.Request, _ httpr
 		return
 	}
 
+	type Response struct {
+		Token        string    `json:"access_token"`
+		RefreshToken string    `json:"refresh_token"`
+		User         *ent.User `json:"user"`
+	}
+
+	res := Response{
+		Token:        tokens.Token,
+		RefreshToken: tokens.RefreshToken,
+		User:         user,
+	}
+
 	refreshCookie := app.auth.GetRefreshCookie(tokens.RefreshToken)
 	// this will send a cookie to whatever response we send
 	http.SetCookie(w, refreshCookie)
 
-	app.writeJSON(w, http.StatusAccepted, tokens)
+	app.writeJSON(w, http.StatusAccepted, res)
 }
 
 func (app *application) logout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -292,9 +341,22 @@ func (app *application) refreshToken(w http.ResponseWriter, r *http.Request, _ h
 				return
 			}
 
+			// TODO: Extract this part of code since its repeating in three functions
+			type Response struct {
+				Token        string    `json:"access_token"`
+				RefreshToken string    `json:"refresh_token"`
+				User         *ent.User `json:"user"`
+			}
+
+			res := Response{
+				Token:        tokenPairs.Token,
+				RefreshToken: tokenPairs.RefreshToken,
+				User:         user,
+			}
+
 			http.SetCookie(w, app.auth.GetRefreshCookie(tokenPairs.RefreshToken))
 
-			app.writeJSON(w, http.StatusOK, tokenPairs)
+			app.writeJSON(w, http.StatusOK, res)
 		}
 	}
 }

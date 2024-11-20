@@ -7,6 +7,7 @@ import { Outlet } from "react-router-dom";
 
 function App() {
   const [jwtToken, setJwtToken] = useState("");
+  const [user, setUser] = useState({});
   const [tickInterval, setTickInterval] = useState();
 
   const toggleRefresh = useCallback(
@@ -30,6 +31,7 @@ function App() {
             })
             .catch((error) => {
               console.log("user is not logged in");
+              setUser({});
             });
         }, 600000);
         setTickInterval(i);
@@ -76,11 +78,14 @@ function App() {
         <Navbar
           jwtToken={jwtToken}
           updateJwtToken={(val) => setJwtToken(val)}
+          removeUser={() => setUser({})}
           toggleRefresh={() => toggleRefresh()}
         />
         <Outlet
           context={{
             jwtToken,
+            user,
+            setUser,
             setJwtToken,
             toggleRefresh,
           }}

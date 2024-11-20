@@ -64,6 +64,7 @@ export default function SignIn(props) {
 
   const { jwtToken } = useOutletContext();
   const { setJwtToken } = useOutletContext();
+  const { setUser } = useOutletContext();
   const { toggleRefresh } = useOutletContext();
 
   const navigate = useNavigate();
@@ -99,8 +100,9 @@ export default function SignIn(props) {
         if (data.error) {
           console.log("Data error: " + data.message);
         } else {
-          console.log("JWT Token : " + data.access_token);
+          console.log(data.user);
           setJwtToken(data.access_token);
+          setUser(data.user);
           toggleRefresh(true);
           navigate("/polls");
         }

@@ -23,7 +23,12 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
   padding: "8px 12px",
 }));
 
-export default function Navbar({ jwtToken, updateJwtToken, toggleRefresh }) {
+export default function Navbar({
+  jwtToken,
+  updateJwtToken,
+  removeUser,
+  toggleRefresh,
+}) {
   const navigate = useNavigate();
 
   const goToSignIn = () => {
@@ -58,6 +63,7 @@ export default function Navbar({ jwtToken, updateJwtToken, toggleRefresh }) {
       })
       .finally(() => {
         updateJwtToken("");
+        removeUser();
         toggleRefresh(false);
         navigate("/signin");
       });
