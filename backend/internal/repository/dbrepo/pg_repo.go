@@ -126,15 +126,57 @@ func (m *PostgresDBRepo) AllPolls() ([]*ent.Poll, error) {
 		return nil, err
 	}
 	for _, p := range polls {
+		owner, err := p.QueryUser().First(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed querying poll owner %q poll: %w", p.Question, err)
+		}
+
 		poll_opts, err := p.QueryPollOptions().All(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed querying poll option %q poll: %w", p.Question, err)
-
 		}
+
+		for _, po := range poll_opts {
+			vs, err := po.QueryVotes().All(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed querying votes for %q poll option: %w", po.Title, err)
+			}
+
+			for _, v := range vs {
+				u, err := v.QueryUser().Only(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("failed querying user for %q vote: %w", v, err)
+				}
+				v.Edges.User = u
+			}
+
+			po.Edges.Votes = append(po.Edges.Votes, vs...)
+		}
+
+		p.Edges.User = owner
 		p.Edges.PollOptions = append(p.Edges.PollOptions, poll_opts...)
 	}
 
 	return polls, nil
+}
+
+func (m *PostgresDBRepo) CreatePoll(question string, options []string, uid int) (*ent.Poll, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	p, err := m.DB.Poll.Create().SetQuestion(question).SetStatus("open").SetUserID(uid).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, o := range options {
+		_, err := m.DB.PollOption.Create().SetTitle(o).SetPoll(p).Save(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return p, nil
 }
 
 func (m *PostgresDBRepo) AllUsers() ([]*ent.User, error) {

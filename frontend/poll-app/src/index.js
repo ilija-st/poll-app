@@ -7,6 +7,7 @@ import ErrorPage from "./components/error-page/ErrorPage";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Polls from "./components/poll/Polls";
 import Home from "./components/Home/Home";
+import CreatePoll from "./components/poll/CreatePoll";
 
 const router = createBrowserRouter([
   {
@@ -26,6 +27,10 @@ const router = createBrowserRouter([
       {
         path: "/polls",
         element: <Polls />,
+      },
+      {
+        path: "/polls/new",
+        element: <CreatePoll />,
       },
     ],
   },
