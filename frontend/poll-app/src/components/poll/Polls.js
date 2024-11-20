@@ -1,7 +1,50 @@
 import { Box } from "@mui/material";
 import Poll from "./Poll";
+import { useEffect, useState } from "react";
 
 const Polls = () => {
+  const [polls, setPolls] = useState([]);
+
+  useEffect(() => {
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+
+    const requestOptions = {
+      method: "GET",
+      headers: headers,
+    };
+
+    fetch(`/polls`, requestOptions)
+      .then((response) => response.json())
+      .then((data) => {
+        setPolls(data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
+
+  // Parse polls data
+  if (polls) {
+    polls.map((poll) => {
+      poll.poll_options = Object.values(poll.edges.poll_options);
+      poll.author =
+        poll.edges.user.first_name + " " + poll.edges.user.last_name;
+      poll.total_votes = 0;
+      if (poll.poll_options) {
+        poll.options_count = poll.poll_options.length;
+        poll.poll_options.map((pollOpt) => {
+          pollOpt.votes = pollOpt.edges.votes;
+          pollOpt.num_votes = pollOpt.votes?.length;
+          if (pollOpt.votes?.length) {
+            poll.total_votes += pollOpt.votes.length;
+          }
+        });
+      }
+      console.log(poll);
+    });
+  }
+
   const handleVote = async (pollId, optionId) => {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -17,30 +60,12 @@ const Polls = () => {
     console.log("Deleting poll:", pollId);
     // Show confirmation dialog and delete poll
   };
-  const polls = [
-    {
-      id: 1,
-      question: "What's your favorite programming language?",
-      created_at: "2024-03-19T10:00:00Z",
-      total_votes: 42,
-      author: "John Doe",
-      options_count: 5,
-    },
-    {
-      id: 2,
-      question: "What's your most hated programming language?",
-      created_at: "2023-03-19T10:00:00Z",
-      total_votes: 1232,
-      author: "Jon Snow",
-      options_count: 6,
-    },
-    // ... more polls
-  ];
 
   return (
     <Box sx={{ p: 2 }}>
       {polls.map((poll) => (
         <Poll
+          key={poll.id}
           poll={poll}
           onVote={(id) => console.log("Vote:", id)}
           onEdit={(id) => console.log("Edit:", id)}

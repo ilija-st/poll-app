@@ -45,11 +45,7 @@ const Poll = ({
     total_votes = 0,
     author = "Anonymous",
     options_count = 0,
-    options = [
-      { id: 1, title: "Option 1", votes: 10 },
-      { id: 2, title: "Option 2", votes: 15 },
-      { id: 3, title: "Option 3", votes: 20 },
-    ],
+    poll_options = [],
   } = poll;
 
   // Format the creation date relative to now (e.g., "2 hours ago")
@@ -147,7 +143,7 @@ const Poll = ({
           <Divider />
           <CardContent sx={{ pt: 2, pb: 1 }}>
             <RadioGroup value={selectedOption} onChange={handleOptionChange}>
-              {options.map((option) => (
+              {poll_options.map((option) => (
                 <FormControlLabel
                   key={option.id}
                   value={option.id.toString()}
@@ -156,6 +152,7 @@ const Poll = ({
                     <Box
                       sx={{
                         display: "flex",
+                        gap: 1,
                         justifyContent: "space-between",
                         width: "100%",
                         alignItems: "center",
@@ -163,7 +160,7 @@ const Poll = ({
                     >
                       <Typography>{option.title}</Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {option.votes} votes
+                        {option.num_votes || "0"} votes
                       </Typography>
                     </Box>
                   }
