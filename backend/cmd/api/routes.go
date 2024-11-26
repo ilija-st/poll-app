@@ -15,9 +15,13 @@ func (app *application) routes() http.Handler {
 
 	mux.POST("/polls", app.authRequired(app.CreatePoll))
 
+	mux.PUT("/polls", app.authRequired(app.UpdatePoll))
+
+	mux.DELETE("/polls", app.authRequired(app.DeletePoll))
+
 	mux.GET("/polls/:id", app.OnePoll)
 
-	mux.POST("/polls/:id", app.authRequired(app.VoteOnPollOption))
+	mux.PUT("/polls/:id", app.authRequired(app.VoteOnPollOption))
 
 	mux.GET("/users", app.authRequired(app.AllUsers))
 

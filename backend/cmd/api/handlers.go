@@ -2,8 +2,6 @@ package main
 
 import (
 	"backend/ent"
-	"backend/ent/predicate"
-	"backend/ent/user"
 	"context"
 	"errors"
 	"log"
@@ -102,64 +100,122 @@ func (app *application) CreatePoll(w http.ResponseWriter, r *http.Request, ps ht
 	_ = app.writeJSON(w, http.StatusOK, poll)
 }
 
-func (app *application) VoteOnPollOption(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (app *application) UpdatePoll(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	var requestPayload struct {
-		UserId       string `json:"user_id"`
-		PollOptionId string `json:"poll_option_id"`
+		PollId  int      `json:"poll_id"`
+		Options []string `json:"options"`
 	}
+
 	err := app.readJSON(w, r, &requestPayload)
 	if err != nil {
 		app.errorJSON(w, err, http.StatusBadRequest)
 		return
 	}
-	// 1. Validate poll option exists and belongs to the correct poll
+	log.Println("Request payload:", requestPayload)
+
+	poll, err := app.DB.UpdatePoll(requestPayload.PollId, requestPayload.Options)
+	if err != nil {
+		app.errorJSON(w, errors.New("error when updating a poll"), http.StatusBadRequest)
+		return
+	}
+
+	_ = app.writeJSON(w, http.StatusOK, poll)
+}
+
+func (app *application) DeletePoll(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	var requestPayload struct {
+		PollId int `json:"id"`
+		UserId int `json:"user_id"`
+	}
+
+	err := app.readJSON(w, r, &requestPayload)
+	if err != nil {
+		app.errorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+
+	// validate that the poll belongs to a user with given id
+	poll, err := app.DB.GetPollById(requestPayload.PollId)
+	if err != nil {
+		app.errorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+
+	if poll.Edges.User.ID != requestPayload.UserId {
+		app.errorJSON(w, errors.New("user with given id is not the owner of this poll"), http.StatusBadRequest)
+		return
+	}
+
+	// delete a poll
+	log.Println("Deleting poll:", poll)
+	err = app.DB.DeletePoll(poll.ID)
+	if err != nil {
+		app.errorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+}
+
+func (app *application) VoteOnPollOption(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	var requestPayload struct {
+		UserId       int `json:"user_id"`
+		PollId       int `json:"poll_id"`
+		PollOptionId int `json:"poll_option_id"`
+	}
+
+	err := app.readJSON(w, r, &requestPayload)
+	if err != nil {
+		app.errorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+	log.Println("Request payload:", requestPayload)
+
+	// 1. Validate poll option exists
+	_, err = app.DB.GetPollOptionById(requestPayload.PollOptionId)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
 
 	// 2. Check if user has already voted on this poll
+	poll, err := app.DB.GetPollById(requestPayload.PollId)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+	log.Println("Poll:", poll)
+	for _, pollOpt := range poll.Edges.PollOptions {
+		votes, err := pollOpt.QueryVotes().All(context.Background())
+		if err != nil {
+			app.errorJSON(w, err)
+			return
+		}
+		for _, v := range votes {
+			users, err := v.QueryUser().All(context.Background())
+			if err != nil {
+				app.writeJSON(w, http.StatusBadRequest, "Could not find users")
+				return
+			}
+			for _, u := range users {
+				if u.ID == requestPayload.UserId {
+					log.Println("User already voted on this poll")
+					app.writeJSON(w, http.StatusBadRequest, "User already voted on a poll.")
+					return
+				}
+			}
+		}
+
+	}
 
 	// 3. Fetch updated poll with vote counts
+	app.DB.VoteOnPollOption(requestPayload.UserId, requestPayload.PollOptionId)
+
+	poll, err = app.DB.GetPollById(requestPayload.PollId)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
 
 	// 4. Respond with updated poll and vote information
-
-	pid, err := strconv.Atoi(ps.ByName("id"))
-	if err != nil {
-		app.errorJSON(w, err)
-		return
-	}
-
-	uid, err := strconv.Atoi(requestPayload.UserId)
-	if err != nil {
-		app.errorJSON(w, err, http.StatusBadRequest)
-		return
-	}
-
-	poid, err := strconv.Atoi(requestPayload.PollOptionId)
-	if err != nil {
-		app.errorJSON(w, err, http.StatusBadRequest)
-		return
-	}
-
-	po, err := app.DB.GetPollOptionById(poid)
-	if err != nil {
-		app.errorJSON(w, err)
-		return
-	}
-
-	exists, err := po.QueryVotes().Where(predicate.Vote(user.IDEQ(uid))).Exist(context.Background())
-	if err != nil {
-		app.errorJSON(w, err)
-	}
-	if exists {
-		app.writeJSON(w, http.StatusBadRequest, "User already voted on a poll.")
-		return
-	}
-
-	app.DB.VoteOnPollOption(uid, poid)
-
-	poll, err := app.DB.GetPollById(pid)
-	if err != nil {
-		app.errorJSON(w, err)
-		return
-	}
 
 	_ = app.writeJSON(w, http.StatusOK, poll)
 }

@@ -179,6 +179,37 @@ func (m *PostgresDBRepo) CreatePoll(question string, options []string, uid int) 
 	return p, nil
 }
 
+func (m *PostgresDBRepo) UpdatePoll(id int, options []string) (*ent.Poll, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	poll, err := m.GetPollById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, option := range options {
+		_, err := m.DB.PollOption.Create().SetTitle(option).SetPoll(poll).Save(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return poll, nil
+}
+
+func (m *PostgresDBRepo) DeletePoll(pollId int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	err := m.DB.Poll.DeleteOneID(pollId).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *PostgresDBRepo) AllUsers() ([]*ent.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
@@ -244,6 +275,12 @@ func (m *PostgresDBRepo) GetPollById(id int) (*ent.Poll, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	user, err := poll.QueryUser().First(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed querying poll option %q poll: %w", poll.Question, err)
+	}
+
 	poll_opts, err := poll.QueryPollOptions().All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed querying poll option %q poll: %w", poll.Question, err)
@@ -267,6 +304,7 @@ func (m *PostgresDBRepo) GetPollById(id int) (*ent.Poll, error) {
 	}
 
 	poll.Edges.PollOptions = append(poll.Edges.PollOptions, poll_opts...)
+	poll.Edges.User = user
 
 	return poll, nil
 }
