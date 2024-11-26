@@ -12,10 +12,7 @@ function App() {
 
   const toggleRefresh = useCallback(
     (status) => {
-      console.log("clicked");
-
       if (status) {
-        console.log("turning on ticking");
         let i = setInterval(() => {
           const requestOptions = {
             method: "GET",
@@ -27,18 +24,15 @@ function App() {
             .then((data) => {
               if (data.access_token) {
                 setJwtToken(data.access_token);
+                setUser(data.user);
               }
             })
             .catch((error) => {
-              console.log("user is not logged in");
-              setUser({});
+              console.log("user is not logged in: " + error);
             });
         }, 600000);
         setTickInterval(i);
-        console.log("setting tick interval to", i);
       } else {
-        console.log("turning off ticking");
-        console.log("turning off tickInterval", tickInterval);
         setTickInterval(null);
         clearInterval(tickInterval);
       }
@@ -47,7 +41,7 @@ function App() {
   );
 
   useEffect(() => {
-    if (jwtToken === "") {
+    if (jwtToken === "" || !user) {
       const requestOptions = {
         method: "GET",
         credentials: "include",
@@ -58,6 +52,7 @@ function App() {
         .then((data) => {
           if (data.access_token) {
             setJwtToken(data.access_token);
+            setUser(data.user);
             toggleRefresh(true);
           }
         })
@@ -65,7 +60,7 @@ function App() {
           console.log("user is not logged in", error);
         });
     }
-  }, [jwtToken, toggleRefresh]);
+  }, [jwtToken, user, toggleRefresh]);
 
   return (
     <AppTheme>

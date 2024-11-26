@@ -96,14 +96,16 @@ export default function Navbar({
               >
                 Home
               </Button>
-              <Button
-                variant="text"
-                color="info"
-                size="small"
-                onClick={navigatePolls}
-              >
-                Polls
-              </Button>
+              {jwtToken !== "" && (
+                <Button
+                  variant="text"
+                  color="info"
+                  size="small"
+                  onClick={navigatePolls}
+                >
+                  Polls
+                </Button>
+              )}
               {jwtToken !== "" && (
                 <Button
                   variant="text"

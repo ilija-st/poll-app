@@ -43,7 +43,7 @@ function CreatePoll() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
 
@@ -69,9 +69,6 @@ function CreatePoll() {
       options: validOptions.map((option) => option.trim()),
       user_id: user.id,
     });
-
-    console.log("BODY");
-    console.log(body);
 
     fetch("/polls", {
       method: "POST",
@@ -121,7 +118,6 @@ function CreatePoll() {
             fullWidth
             label="Question"
             value={question}
-            placeholder=""
             onChange={(e) => setQuestion(e.target.value)}
             margin="normal"
             variant="filled"

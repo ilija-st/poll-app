@@ -64,6 +64,7 @@ export default function Register(props) {
 
   const { setJwtToken } = useOutletContext();
   const { toggleRefresh } = useOutletContext();
+  const { setUser } = useOutletContext();
 
   const navigate = useNavigate();
 
@@ -146,6 +147,7 @@ export default function Register(props) {
           console.log("Data error: " + data.message);
         } else {
           setJwtToken(data.access_token);
+          setUser(data.user);
           toggleRefresh(true);
           navigate("/");
         }
