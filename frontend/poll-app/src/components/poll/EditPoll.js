@@ -76,7 +76,7 @@ function EditPollDialog({ open, handleClose, poll }) {
       options: [...validNewOptions.map((option) => option.trim())],
     });
 
-    fetch("/polls", {
+    fetch(`${process.env.REACT_APP_BACKEND}/polls`, {
       method: "PUT",
       headers: headers,
       credentials: "include",

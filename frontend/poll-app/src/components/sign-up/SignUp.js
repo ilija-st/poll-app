@@ -140,7 +140,7 @@ export default function Register(props) {
       }),
     };
 
-    fetch(`/register`, requestOptions)
+    fetch(`${process.env.REACT_APP_BACKEND}/register`, requestOptions)
       .then((response) => response.json())
       .then((data) => {
         if (data.error) {

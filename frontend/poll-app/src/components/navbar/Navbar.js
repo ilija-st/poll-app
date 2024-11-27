@@ -57,7 +57,7 @@ export default function Navbar({
       credentials: "include",
     };
 
-    fetch(`/logout`, requestOptions)
+    fetch(`${process.env.REACT_APP_BACKEND}/logout`, requestOptions)
       .catch((error) => {
         console.log("error logging out", error);
       })

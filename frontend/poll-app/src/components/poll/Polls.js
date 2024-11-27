@@ -21,7 +21,7 @@ const Polls = () => {
       headers: headers,
     };
 
-    fetch(`/polls`, requestOptions)
+    fetch(`${process.env.REACT_APP_BACKEND}/polls`, requestOptions)
       .then((response) => response.json())
       .then((data) => {
         setPolls(data);
@@ -82,7 +82,7 @@ const Polls = () => {
       credentials: "include",
     };
 
-    fetch(`/polls/${pollId}`, requestOptions)
+    fetch(`${process.env.REACT_APP_BACKEND}/polls/${pollId}`, requestOptions)
       .then((response) => {
         if (response.status === 400) {
           Swal.fire({
@@ -174,9 +174,11 @@ const Polls = () => {
             }),
           };
 
-          fetch(`/polls`, requestOptions).catch((error) => {
-            console.log("error deleting a poll", error);
-          });
+          fetch(`${process.env.REACT_APP_BACKEND}/polls`, requestOptions).catch(
+            (error) => {
+              console.log("error deleting a poll", error);
+            }
+          );
 
           navigate("/polls");
         }

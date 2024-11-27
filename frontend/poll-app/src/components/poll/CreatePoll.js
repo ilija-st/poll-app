@@ -70,7 +70,7 @@ function CreatePoll() {
       user_id: user.id,
     });
 
-    fetch("/polls", {
+    fetch(`${process.env.REACT_APP_BACKEND}/polls`, {
       method: "POST",
       headers: headers,
       credentials: "include",
