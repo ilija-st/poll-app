@@ -31,7 +31,7 @@ func main() {
 	var app application
 
 	// read from command line - we might pass flag that says this api is only for domain example.com
-	flag.StringVar(&app.DSN, "dsn", "host=10.114.21.99 port=5432 user=postgres password=postgres dbname=polls sslmode=disable timezone=UTC connect_timeout=5", "Postgres connection string")
+	flag.StringVar(&app.DSN, "dsn", "host=localhost port=5432 user=postgres password=postgres dbname=polls sslmode=disable timezone=UTC connect_timeout=5", "Postgres connection string")
 	flag.StringVar(&app.JWTSecret, "jwt-secret", "verysecret", "signing secret")
 	flag.StringVar(&app.JWTIssuer, "jwt-issuer", "poll.com", "signing issuer")
 	flag.StringVar(&app.JWTAudience, "jwt-audience", "poll.com", "signing audience")
