@@ -16,14 +16,15 @@ import (
 const port = 8080
 
 type application struct {
-	DSN          string
-	Domain       string
-	DB           repository.DatabaseRepo
-	auth         Auth
-	JWTSecret    string
-	JWTIssuer    string
-	JWTAudience  string
-	CookieDomain string
+	DSN            string
+	Domain         string
+	DB             repository.DatabaseRepo
+	auth           Auth
+	JWTSecret      string
+	JWTIssuer      string
+	JWTAudience    string
+	CookieDomain   string
+	FrontendDomain string
 }
 
 func main() {
@@ -37,9 +38,9 @@ func main() {
 	flag.StringVar(&app.JWTAudience, "jwt-audience", "poll.com", "signing audience")
 	flag.StringVar(&app.CookieDomain, "cookie-domain", "localhost", "cookie domain")
 	flag.StringVar(&app.Domain, "domain", "poll.com", "domain")
+	flag.StringVar(&app.FrontendDomain, "frontend-domain", "http://localhost:3000", "domain")
 	flag.Parse()
 
-	app.Domain = "poll.com"
 	log.Println("Starting application on port", port)
 
 	// connect to the database
@@ -62,7 +63,7 @@ func main() {
 		TokenExpiry:   time.Minute * 15,
 		RefreshExpiry: time.Hour * 24,
 		CookiePath:    "/",
-		CookieName:    "Host-refresh_token",
+		CookieName:    "refresh_token",
 		CookieDomain:  app.CookieDomain,
 	}
 
